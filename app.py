@@ -228,13 +228,13 @@ Format all section headers using markdown bold so they stand out clearly.
 
     client = get_client()
     
-    # Updated reliable model list for Google Gen AI SDK
-    primary_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"]
+    # Active valid production models
+    active_models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     response = None
     last_error = None
 
     with st.spinner("⚡ Fast-generating your email..."):
-        for model_name in primary_models:
+        for model_name in active_models:
             try:
                 response = client.models.generate_content(
                     model=model_name,
@@ -250,7 +250,6 @@ Format all section headers using markdown bold so they stand out clearly.
         st.session_state.request_count += 1
         st.success("🎉 Content generated successfully!")
         
-        # Formatted markdown output with bold headers
         st.markdown(response.text)
         st.divider()
 
@@ -262,7 +261,7 @@ Format all section headers using markdown bold so they stand out clearly.
             use_container_width=True
         )
     else:
-        st.error(f"Generation failed: {last_error}. Please re-check your API key in Streamlit Secrets.")
+        st.error(f"Generation failed: {last_error}. Make sure your key is valid in Streamlit Secrets.")
 
 st.divider()
 st.caption("Powered by Google Gemini API + Streamlit")
