@@ -17,13 +17,11 @@ st.set_page_config(
 # -----------------------------
 st.markdown("""
 <style>
-    /* Main Background & Text Color */
     .stApp {
         background-color: #f8fafc;
         color: #0f172a;
     }
     
-    /* Header Box */
     .header-box {
         background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
         padding: 24px;
@@ -48,7 +46,6 @@ st.markdown("""
         color: #f1f5f9 !important;
     }
 
-    /* Metric Dashboard Cards */
     .metric-card {
         background: #ffffff;
         border: 1px solid #cbd5e1;
@@ -70,7 +67,6 @@ st.markdown("""
         color: #64748b;
     }
 
-    /* Form Section Headers */
     .form-header {
         color: #0f172a;
         font-size: 18px;
@@ -79,11 +75,11 @@ st.markdown("""
         margin-bottom: 10px;
     }
 
-    /* Primary Generate Button */
     .stButton>button {
         background: #2563eb !important;
         color: #ffffff !important;
-        font-size: 16px !weight: 700 !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
         border: none !important;
         border-radius: 8px !important;
         padding: 12px 20px !important;
@@ -106,7 +102,6 @@ if "request_count" not in st.session_state:
 if "last_reset_date" not in st.session_state:
     st.session_state.last_reset_date = date.today()
 
-# Daily limit reset
 if st.session_state.last_reset_date != date.today():
     st.session_state.request_count = 0
     st.session_state.last_reset_date = date.today()
@@ -124,7 +119,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Usage Counter Dashboard
+# Usage Dashboard
 remaining = DAILY_LIMIT - st.session_state.request_count
 c1, c2 = st.columns(2)
 with c1:
@@ -204,7 +199,6 @@ if generate:
         st.error("❌ Daily limit of 1500 generations reached.")
         st.stop()
 
-    # Prompt forcing Markdown Bold formatting (**TITLE**)
     prompt = f"""
 You are an expert professional communication writer.
 
@@ -233,12 +227,14 @@ Format all section headers using markdown bold so they stand out clearly.
 """
 
     client = get_client()
-    models_to_try = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
+    
+    # Updated reliable model list for Google Gen AI SDK
+    primary_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"]
     response = None
     last_error = None
 
-    with st.spinner("Generating content..."):
-        for model_name in models_to_try:
+    with st.spinner("⚡ Fast-generating your email..."):
+        for model_name in primary_models:
             try:
                 response = client.models.generate_content(
                     model=model_name,
@@ -248,18 +244,16 @@ Format all section headers using markdown bold so they stand out clearly.
                     break
             except Exception as e:
                 last_error = e
-                time.sleep(1)
+                continue
 
     if response and response.text:
         st.session_state.request_count += 1
         st.success("🎉 Content generated successfully!")
         
-        # Display output formatted in rich text (Markdown) so bold text displays properly
+        # Formatted markdown output with bold headers
         st.markdown(response.text)
-        
         st.divider()
 
-        # Download option
         st.download_button(
             label="⬇️ Download Output as TXT",
             data=response.text,
@@ -268,7 +262,7 @@ Format all section headers using markdown bold so they stand out clearly.
             use_container_width=True
         )
     else:
-        st.error(f"Generation failed: {last_error}. Please try again.")
+        st.error(f"Generation failed: {last_error}. Please re-check your API key in Streamlit Secrets.")
 
 st.divider()
 st.caption("Powered by Google Gemini API + Streamlit")
