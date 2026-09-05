@@ -94,9 +94,9 @@ Make the content ready to copy and paste.
     try:
         client = get_client()
 
-        # Model update: gemini-1.5-flash is stable and supported
+        # Updated model identifier to gemini-2.0-flash
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt
         )
 
