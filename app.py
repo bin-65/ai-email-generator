@@ -8,81 +8,90 @@ from google import genai
 # -----------------------------
 st.set_page_config(
     page_title="MailCraft AI - Smart Email Assistant",
-    page_icon="⚡",
-    layout="centered",
-    initial_sidebar_state="expanded"
+    page_icon="✉️",
+    layout="centered"
 )
 
 # -----------------------------
-# Custom Styling (CSS)
+# Light Theme Custom CSS
 # -----------------------------
 st.markdown("""
 <style>
-    /* Main Background Accent */
+    /* Main Background & Text Color */
     .stApp {
-        background-color: #0e1117;
+        background-color: #f8fafc;
+        color: #0f172a;
     }
     
-    /* Title Banner Box */
+    /* Header Box */
     .header-box {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
         padding: 24px;
-        border-radius: 16px;
-        color: white;
+        border-radius: 12px;
+        color: #ffffff;
         text-align: center;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
     .header-title {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 800;
         margin: 0;
-        letter-spacing: -0.5px;
+        color: #ffffff !important;
     }
     
     .header-subtitle {
         font-size: 14px;
-        opacity: 0.9;
-        margin-top: 6px;
+        opacity: 0.95;
+        margin-top: 4px;
+        color: #f1f5f9 !important;
     }
 
-    /* Metric Card Styling */
+    /* Metric Dashboard Cards */
     .metric-card {
-        background: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 12px 20px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 12px;
         text-align: center;
-        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .metric-value {
         font-size: 22px;
-        font-weight: 700;
-        color: #38bdf8;
+        font-weight: 800;
+        color: #1e293b;
     }
     
     .metric-label {
-        font-size: 12px;
-        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
     }
 
-    /* Primary Button Styling */
+    /* Form Section Headers */
+    .form-header {
+        color: #0f172a;
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 15px;
+        margin-bottom: 10px;
+    }
+
+    /* Primary Generate Button */
     .stButton>button {
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
-        color: white !important;
-        font-weight: 600 !important;
+        background: #2563eb !important;
+        color: #ffffff !important;
+        font-size: 16px !weight: 700 !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
+        border-radius: 8px !important;
+        padding: 12px 20px !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.6) !important;
+        background: #1d4ed8 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -97,26 +106,26 @@ if "request_count" not in st.session_state:
 if "last_reset_date" not in st.session_state:
     st.session_state.last_reset_date = date.today()
 
-# Reset counter at midnight
+# Daily limit reset
 if st.session_state.last_reset_date != date.today():
     st.session_state.request_count = 0
     st.session_state.last_reset_date = date.today()
 
 # -----------------------------
-# Header UI & SVG Logo
+# App Header with SVG Logo
 # -----------------------------
 st.markdown("""
 <div class="header-box">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:8px;">
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:6px;">
         <path d="M3 8L10.8906 13.2604C11.5624 13.7083 12.4376 13.7083 13.1094 13.2604L21 8M5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <div class="header-title">MailCraft AI Assistant</div>
-    <div class="header-subtitle">Generate hyper-personalized emails, captions & hashtags instantly</div>
+    <div class="header-subtitle">Generate professional emails, captions & hashtags instantly</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Top Bar Usage Dashboard
-remaining = MAX_REQS = DAILY_LIMIT - st.session_state.request_count
+# Usage Counter Dashboard
+remaining = DAILY_LIMIT - st.session_state.request_count
 c1, c2 = st.columns(2)
 with c1:
     st.markdown(f"""
@@ -129,25 +138,25 @@ with c1:
 with c2:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-value" style="color:#10b981;">{remaining}</div>
-        <div class="metric-label">Remaining API Capacity</div>
+        <div class="metric-value" style="color:#059669;">{remaining}</div>
+        <div class="metric-label">Remaining Capacity</div>
     </div>
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# API Client Setup
+# API Client
 # -----------------------------
 def get_client():
     api_key = st.secrets.get("GEMINI_API_KEY", "")
     if not api_key:
-        st.error("⚠️ `GEMINI_API_KEY` missing. Please add it in Streamlit Secrets.")
+        st.error("⚠️ GEMINI_API_KEY is missing in Streamlit Secrets.")
         st.stop()
     return genai.Client(api_key=api_key)
 
 # -----------------------------
-# User Input Section
+# Form Inputs
 # -----------------------------
-st.subheader("⚙️ Configure Email Settings")
+st.markdown('<div class="form-header">⚙️ Email & Content Parameters</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
@@ -161,64 +170,66 @@ with col1:
         ["Email", "LinkedIn", "Facebook", "Instagram", "General"]
     )
     tone = st.selectbox(
-        "Communication Tone",
+        "Tone",
         ["Professional & Respectful", "Friendly & Professional", "Formal", "Warm & Respectful"]
     )
 
 with col2:
     professional = st.text_input(
         "Business / Sender Name",
-        placeholder="e.g., TechCorp Solutions"
+        placeholder="e.g., ABC Solutions"
     )
     audience = st.text_input(
-        "Target Audience",
-        placeholder="e.g., Enterprise Clients, HR Managers"
+        "Target Audience (optional)",
+        placeholder="e.g., Students, HR managers"
     )
 
 topic = st.text_area(
-    "Topic / Core Message Details *",
-    placeholder="Describe what you want to communicate (e.g., Announcing a 20% discount offer for Q3 subscribers...)",
-    height=120
+    "Topic / Key Details *",
+    placeholder="e.g., Announcing a new AI course starting next week...",
+    height=110
 )
 
-generate = st.button("🚀 Generate Email Content", use_container_width=True)
+generate = st.button("✨ Generate Content", use_container_width=True)
 
 # -----------------------------
-# Email Generation Logic
+# Content Generation
 # -----------------------------
 if generate:
     if not topic.strip():
-        st.warning("Please enter a topic or core message before generating.")
+        st.warning("Please enter a topic.")
         st.stop()
 
     if st.session_state.request_count >= DAILY_LIMIT:
-        st.error("❌ Daily limit of 1500 generations reached. Counter resets at midnight.")
+        st.error("❌ Daily limit of 1500 generations reached.")
         st.stop()
 
+    # Prompt forcing Markdown Bold formatting (**TITLE**)
     prompt = f"""
-You are an expert professional communication and social media copywriter.
+You are an expert professional communication writer.
 
-Write high-converting content based on these inputs:
+Generate content based on these details:
 - Content Type: {content_type}
 - Platform: {platform}
 - Topic: {topic}
-- Business/Person: {professional or "Not specified"}
+- Sender/Business: {professional or "Not specified"}
 - Tone: {tone}
-- Target Audience: {audience or "General audience"}
+- Target Audience: {audience or "General"}
 
-Provide ONLY the output organized into these exact section titles:
+STRICT FORMAT REQUIREMENTS:
+Format all section headers using markdown bold so they stand out clearly.
 
-SUBJECT:
-A clear, clickable subject line or post title.
+**SUBJECT:**
+[Provide a clear subject line or post title here]
 
-MAIN CONTENT:
-The polished main body of the email or message. Keep it well-formatted with appropriate line breaks and professional sign-off.
+**MAIN CONTENT:**
+[Provide the complete, well-formatted email body with clear paragraphs and a professional sign-off]
 
-CAPTION:
-A engaging 1-2 sentence caption tailored for {platform}.
+**CAPTION:**
+[Provide a short 1-2 sentence caption for {platform}]
 
-HASHTAGS:
-8-10 relevant high-traffic hashtags (e.g. #Business #Communication).
+**HASHTAGS:**
+[Provide 8-10 relevant hashtags starting with #]
 """
 
     client = get_client()
@@ -226,7 +237,7 @@ HASHTAGS:
     response = None
     last_error = None
 
-    with st.spinner("✨ Crafting your content..."):
+    with st.spinner("Generating content..."):
         for model_name in models_to_try:
             try:
                 response = client.models.generate_content(
@@ -240,23 +251,24 @@ HASHTAGS:
                 time.sleep(1)
 
     if response and response.text:
-        # Increment request counter
         st.session_state.request_count += 1
-
-        st.success("🎉 Content Generated Successfully!")
+        st.success("🎉 Content generated successfully!")
         
-        # Display output in stylized container
-        st.text_area("Generated Content (Ready to Copy)", response.text, height=450)
+        # Display output formatted in rich text (Markdown) so bold text displays properly
+        st.markdown(response.text)
+        
+        st.divider()
 
+        # Download option
         st.download_button(
-            label="📥 Download Content as TXT File",
+            label="⬇️ Download Output as TXT",
             data=response.text,
             file_name="generated_email.txt",
             mime="text/plain",
             use_container_width=True
         )
     else:
-        st.error(f"Generation failed: {last_error}. Please try clicking generate again.")
+        st.error(f"Generation failed: {last_error}. Please try again.")
 
 st.divider()
-st.caption("Powered by Google Gemini 3.6 API | Optimized for High Throughput")
+st.caption("Powered by Google Gemini API + Streamlit")
