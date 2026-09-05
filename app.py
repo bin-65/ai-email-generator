@@ -94,9 +94,9 @@ Make the content ready to copy and paste.
     try:
         client = get_client()
 
-        # Updated model identifier to gemini-2.0-flash
+        # Modern active model endpoint
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.6-flash",
             contents=prompt
         )
 
