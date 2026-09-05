@@ -3,80 +3,73 @@ import streamlit as st
 from google import genai
 from google.genai.errors import APIError
 
-# Page setup
-st.set_page_config(page_title="AI Content & Email Generator", page_icon="📝")
-st.title("📝 AI Content Generator")
-st.write("Generate professional emails, social media posts, captions, and hashtags.")
+# Page Configuration
+st.set_page_config(page_title="AI Email Generator Assistant", page_icon="✉️")
+st.title("✉️ AI Email Generator Assistant")
+st.write("Generate customized professional emails with captions and hashtags.")
 
-# Get API key from Streamlit secrets or environment variables
+# Retrieve API key
 api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("⚠️ API Key not found. Please configure your `GEMINI_API_KEY` in Streamlit Secrets.")
+    st.error("⚠️ API Key not found. Please add `GEMINI_API_KEY` to Streamlit Secrets.")
     st.stop()
 
-# Initialize Google Gen AI client
 client = genai.Client(api_key=api_key)
 
-# Input UI Controls
+# Input Controls
 col1, col2 = st.columns(2)
 
 with col1:
-    content_type = st.selectbox(
-        "Select Content Type",
-        ["Email", "Social Media Post", "Blog Outline", "Newsletter"]
-    )
     platform = st.selectbox(
-        "Select Platform / Target Audience",
-        ["General Email", "LinkedIn", "Twitter / X", "Instagram", "Facebook"]
+        "Target Platform / Audience",
+        ["General Email", "LinkedIn InMail", "Workplace Slack/Teams Mail", "Cold Outreach Email"]
+    )
+    tone = st.selectbox(
+        "Email Tone",
+        ["Professional & Respectful", "Formal", "Friendly & Professional", "Persuasive"]
     )
 
 with col2:
-    tone = st.selectbox(
-        "Select Tone",
-        ["Professional", "Respectful", "Casual", "Friendly", "Persuasive"]
-    )
-    include_hashtags = st.checkbox("Include Captions & Hashtags", value=True)
+    include_caption = st.checkbox("Include Short Caption & Hashtags", value=True)
 
 topic = st.text_area(
-    "Topic / Core Details",
+    "Email Topic & Core Details",
     placeholder="e.g., Requesting a meeting to discuss the Q3 project update...",
-    height=100
+    height=120
 )
 
-# Generation Action
-if st.button("Generate Content", type="primary"):
+# Generation Trigger
+if st.button("Generate Email", type="primary"):
     if not topic.strip():
-        st.warning("Please enter a topic before generating.")
+        st.warning("Please enter the email topic or details first.")
     else:
-        with st.spinner("Generating content..."):
-            # Construct Prompt
+        with st.spinner("Writing your email..."):
             prompt = f"""
-            You are an expert content creator and copywriter.
-            Write a complete {content_type} tailored for {platform}.
-            
+            You are a professional email assistant. 
+            Write a clear and complete email for {platform}.
+
             Tone: {tone}
-            Topic Details: {topic}
-            
-            Format instructions:
-            - Provide a clear subject line (if Email) or strong headline/hook.
-            - Write the main body clearly adhering to the selected tone.
+            Topic/Details: {topic}
+
+            Format Requirement:
+            - **Subject Line**: Concise and compelling.
+            - **Email Body**: Clear greeting, structured paragraphs, professional sign-off.
             """
-            
-            if include_hashtags:
-                prompt += "\n- Include an engaging caption summary and 3-5 relevant hashtags at the end."
+
+            if include_caption:
+                prompt += "\n- **Caption**: A 1-sentence summary.\n- **Hashtags**: 3-5 relevant hashtags."
 
             try:
-                # Standard active model: gemini-1.5-flash
                 response = client.models.generate_content(
                     model="gemini-1.5-flash",
                     contents=prompt
                 )
                 
-                st.subheader("Generated Output")
+                st.subheader("Generated Email Output")
                 st.markdown(response.text)
                 
             except APIError as e:
                 st.error(f"Google Gen AI API Error: {e.message}")
             except Exception as e:
-                st.error(f"An unexpected error occurred: {str(e)}")
+                st.error(f"An error occurred: {str(e)}")
