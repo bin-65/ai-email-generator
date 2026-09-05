@@ -1,10 +1,10 @@
 import time
+import requests
 from datetime import date
 import streamlit as st
-from google import genai
 
 # -----------------------------
-# App Configuration & Page Title
+# App Configuration
 # -----------------------------
 st.set_page_config(
     page_title="MailCraft AI - Smart Email Assistant",
@@ -107,7 +107,7 @@ if st.session_state.last_reset_date != date.today():
     st.session_state.last_reset_date = date.today()
 
 # -----------------------------
-# App Header with SVG Logo
+# Header Box UI
 # -----------------------------
 st.markdown("""
 <div class="header-box">
@@ -119,7 +119,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Usage Dashboard
+# Counter Dashboard
 remaining = DAILY_LIMIT - st.session_state.request_count
 c1, c2 = st.columns(2)
 with c1:
@@ -139,17 +139,40 @@ with c2:
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# API Client
+# API Direct Call via REST HTTP
 # -----------------------------
-def get_client():
-    api_key = st.secrets.get("GEMINI_API_KEY", "")
-    if not api_key:
-        st.error("⚠️ GEMINI_API_KEY is missing in Streamlit Secrets.")
-        st.stop()
-    return genai.Client(api_key=api_key)
+api_key = st.secrets.get("GEMINI_API_KEY", "")
+if not api_key:
+    st.error("⚠️ GEMINI_API_KEY missing in Streamlit Secrets.")
+    st.stop()
+
+def generate_via_rest(prompt_text):
+    models = ["gemini-3.1-pro-preview", "gemini-3.6-flash", "gemini-1.5-flash"]
+    
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt_text}]
+        }]
+    }
+
+    last_err = ""
+    for m in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+        try:
+            res = requests.post(url, json=payload, headers=headers, timeout=30)
+            data = res.json()
+            if res.status_code == 200 and "candidates" in data:
+                return data["candidates"][0]["content"]["parts"][0]["text"], None
+            else:
+                last_err = data.get("error", {}).get("message", res.text)
+        except Exception as err:
+            last_err = str(err)
+            
+    return None, last_err
 
 # -----------------------------
-# Form Inputs
+# User Input Form
 # -----------------------------
 st.markdown('<div class="form-header">⚙️ Email & Content Parameters</div>', unsafe_allow_html=True)
 
@@ -188,7 +211,7 @@ topic = st.text_area(
 generate = st.button("✨ Generate Content", use_container_width=True)
 
 # -----------------------------
-# Content Generation
+# Execution
 # -----------------------------
 if generate:
     if not topic.strip():
@@ -196,7 +219,7 @@ if generate:
         st.stop()
 
     if st.session_state.request_count >= DAILY_LIMIT:
-        st.error("❌ Daily limit of 1500 generations reached.")
+        st.error("❌ Daily limit reached.")
         st.stop()
 
     prompt = f"""
@@ -226,42 +249,25 @@ Format all section headers using markdown bold so they stand out clearly.
 [Provide 8-10 relevant hashtags starting with #]
 """
 
-    client = get_client()
-    
-    # Active valid production models
-    active_models = ["gemini-2.5-flash", "gemini-2.5-pro"]
-    response = None
-    last_error = None
+    with st.spinner("⚡ Generating your email..."):
+        text_out, error_msg = generate_via_rest(prompt)
 
-    with st.spinner("⚡ Fast-generating your email..."):
-        for model_name in active_models:
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
-                )
-                if response and response.text:
-                    break
-            except Exception as e:
-                last_error = e
-                continue
+        if text_out:
+            st.session_state.request_count += 1
+            st.success("🎉 Content generated successfully!")
+            
+            st.markdown(text_out)
+            st.divider()
 
-    if response and response.text:
-        st.session_state.request_count += 1
-        st.success("🎉 Content generated successfully!")
-        
-        st.markdown(response.text)
-        st.divider()
-
-        st.download_button(
-            label="⬇️ Download Output as TXT",
-            data=response.text,
-            file_name="generated_email.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
-    else:
-        st.error(f"Generation failed: {last_error}. Make sure your key is valid in Streamlit Secrets.")
+            st.download_button(
+                label="⬇️ Download Output as TXT",
+                data=text_out,
+                file_name="generated_email.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+        else:
+            st.error(f"Generation Error: {error_msg}")
 
 st.divider()
-st.caption("Powered by Google Gemini API + Streamlit")
+st.caption("Powered by Google Gemini Direct Endpoint + Streamlit")
