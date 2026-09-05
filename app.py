@@ -193,6 +193,10 @@ with col1:
     )
 
 with col2:
+    length_style = st.selectbox(
+        "Email Length / Format",
+        ["Concise (Short & Direct)", "Standard (Detailed & Balanced)", "Comprehensive (Detailed & In-Depth)"]
+    )
     professional = st.text_input(
         "Business / Sender Name",
         placeholder="e.g., ABC Solutions"
@@ -232,15 +236,18 @@ Generate content based on these details:
 - Sender/Business: {professional or "Not specified"}
 - Tone: {tone}
 - Target Audience: {audience or "General"}
+- Length Requirement: {length_style}
 
 STRICT FORMAT REQUIREMENTS:
 Format all section headers using markdown bold so they stand out clearly.
+
+If length requirement is "Concise (Short & Direct)", keep the main email content very crisp, short (2-4 bullet-friendly sentences), to the point, and easy to read quickly without extra fluff.
 
 **SUBJECT:**
 [Provide a clear subject line or post title here]
 
 **MAIN CONTENT:**
-[Provide the complete, well-formatted email body with clear paragraphs and a professional sign-off]
+[Provide the main email body following the length requirement]
 
 **CAPTION:**
 [Provide a short 1-2 sentence caption for {platform}]
