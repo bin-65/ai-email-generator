@@ -139,16 +139,35 @@ with c2:
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# API Direct Call via REST HTTP
+# Dynamic REST Execution Engine
 # -----------------------------
 api_key = st.secrets.get("GEMINI_API_KEY", "")
 if not api_key:
     st.error("⚠️ GEMINI_API_KEY missing in Streamlit Secrets.")
     st.stop()
 
+def get_active_model_list():
+    """Fetch live working models directly from API."""
+    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    try:
+        res = requests.get(list_url, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            active_models = []
+            for m in data.get("models", []):
+                if "generateContent" in m.get("supportedGenerationMethods", []):
+                    # Clean 'models/' prefix if present
+                    name = m["name"].replace("models/", "")
+                    active_models.append(name)
+            if active_models:
+                return active_models
+    except Exception:
+        pass
+    # Fallback list of modern endpoints
+    return ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash"]
+
 def generate_via_rest(prompt_text):
-    models = ["gemini-3.1-pro-preview", "gemini-3.6-flash", "gemini-1.5-flash"]
-    
+    models_to_try = get_active_model_list()
     headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{
@@ -157,7 +176,7 @@ def generate_via_rest(prompt_text):
     }
 
     last_err = ""
-    for m in models:
+    for m in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
         try:
             res = requests.post(url, json=payload, headers=headers, timeout=30)
@@ -165,11 +184,14 @@ def generate_via_rest(prompt_text):
             if res.status_code == 200 and "candidates" in data:
                 return data["candidates"][0]["content"]["parts"][0]["text"], None
             else:
-                last_err = data.get("error", {}).get("message", res.text)
+                err_msg = data.get("error", {}).get("message", res.text)
+                # Ignore 404 and try next active model
+                if res.status_code != 404:
+                    last_err = err_msg
         except Exception as err:
             last_err = str(err)
             
-    return None, last_err
+    return None, last_err or "No supported model available for your API Key."
 
 # -----------------------------
 # User Input Form
@@ -241,7 +263,7 @@ Generate content based on these details:
 STRICT FORMAT REQUIREMENTS:
 Format all section headers using markdown bold so they stand out clearly.
 
-If length requirement is "Concise (Short & Direct)", keep the main email content very crisp, short (2-4 bullet-friendly sentences), to the point, and easy to read quickly without extra fluff.
+If length requirement is "Concise (Short & Direct)", keep the main email content crisp, short (2-4 concise sentences), to the point, and easy to read quickly.
 
 **SUBJECT:**
 [Provide a clear subject line or post title here]
